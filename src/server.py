@@ -22,7 +22,7 @@ def main():
 
     # Fill in your agent card
     # See: https://a2a-protocol.org/latest/tutorials/python/3-agent-skills-and-card/
-    
+
     skill = AgentSkill(
         id="",
         name="",

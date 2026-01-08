@@ -1,6 +1,10 @@
-# A2A Agent Template
+# Finance Benchmarking Green Agent
 
-A minimal template for building [A2A (Agent-to-Agent)](https://a2a-protocol.org/latest/) green agents compatible with the [AgentBeats](https://agentbeats.dev) platform.
+An agentified version of the finance benchmark.
+
+This works takes the benchmark in https://arxiv.org/abs/2508.00828
+The original code for the dataset is in https://github.com/vals-ai/finance-agent
+
 
 ## Project Structure
 
@@ -18,18 +22,6 @@ pyproject.toml    # Python dependencies
 └─ workflows/
    └─ test-and-publish.yml # CI workflow
 ```
-
-## Getting Started
-
-1. **Create your repository** - Click "Use this template" to create your own repository from this template
-
-2. **Implement your agent** - Add your agent logic to [`src/agent.py`](src/agent.py)
-
-3. **Configure your agent card** - Fill in your agent's metadata (name, skills, description) in [`src/server.py`](src/server.py)
-
-4. **Write your tests** - Add custom tests for your agent in [`tests/test_agent.py`](tests/test_agent.py)
-
-For a concrete example of implementing a green agent using this template, see this [draft PR](https://github.com/RDI-Foundation/green-agent-template/pull/3).
 
 ## Running Locally
 
@@ -64,24 +56,3 @@ uv sync --extra test
 # Run tests against your running agent URL
 uv run pytest --agent-url http://localhost:9009
 ```
-
-## Publishing
-
-The repository includes a GitHub Actions workflow that automatically builds, tests, and publishes a Docker image of your agent to GitHub Container Registry.
-
-If your agent needs API keys or other secrets, add them in Settings → Secrets and variables → Actions → Repository secrets. They'll be available as environment variables during CI tests.
-
-- **Push to `main`** → publishes `latest` tag:
-```
-ghcr.io/<your-username>/<your-repo-name>:latest
-```
-
-- **Create a git tag** (e.g. `git tag v1.0.0 && git push origin v1.0.0`) → publishes version tags:
-```
-ghcr.io/<your-username>/<your-repo-name>:1.0.0
-ghcr.io/<your-username>/<your-repo-name>:1
-```
-
-Once the workflow completes, find your Docker image in the Packages section (right sidebar of your repository). Configure the package visibility in package settings.
-
-> **Note:** Organization repositories may need package write permissions enabled manually (Settings → Actions → General). Version tags must follow [semantic versioning](https://semver.org/) (e.g., `v1.0.0`).

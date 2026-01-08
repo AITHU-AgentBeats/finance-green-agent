@@ -1,12 +1,20 @@
 [project]
-name = "green-agent-template"
+name = "finben-green-agent"
 version = "0.1.0"
-description = "A template for A2A green agents"
+description = "Green agent for the Finance Benchmark"
+authors = [
+    {name = "Anjana Sarkar"},
+    {name = "Uthira Mohan"},
+    {name = "Thomas Plunkett"},
+    {name = "Iraitz Montalbán"},
+
+]
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 dependencies = [
     "a2a-sdk[http-server]>=0.3.20",
     "pydantic>=2.12.5",
+    "python-dotenv>=1.2.1",
     "uvicorn>=0.38.0",
 ]
 
@@ -15,4 +23,20 @@ test = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.24.0",
     "httpx>=0.28.1",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
 ]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/"]
+
+[tool.uv]
+package = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

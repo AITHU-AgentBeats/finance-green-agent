@@ -15,7 +15,7 @@ class EvalRequest(BaseModel):
 
 class Agent:
     # Fill in: list of required participant roles, e.g. ["pro_debater", "con_debater"]
-    required_roles: list[str] = []
+    required_roles: list[str] = ["green_agent"]
     # Fill in: list of required config keys, e.g. ["topic", "num_rounds"]
     required_config_keys: list[str] = []
 

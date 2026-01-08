@@ -1,0 +1,1 @@
+"""Green agent for Finance benchmark"""
