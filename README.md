@@ -2,8 +2,7 @@
 
 An agentified version of the finance benchmark.
 
-This works takes the benchmark in https://arxiv.org/abs/2508.00828
-The original code for the dataset is in https://github.com/vals-ai/finance-agent
+This works takes the benchmark in https://arxiv.org/abs/2508.00828. The original code for the dataset is in https://github.com/vals-ai/finance-agent
 
 
 ## Project Structure

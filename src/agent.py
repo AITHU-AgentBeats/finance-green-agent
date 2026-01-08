@@ -1,10 +1,14 @@
 from typing import Any
 from pydantic import BaseModel, HttpUrl, ValidationError
 from a2a.server.tasks import TaskUpdater
-from a2a.types import Message, TaskState, Part, TextPart, DataPart
+from a2a.types import Message, TaskState, SendMessageSuccessResponse
 from a2a.utils import get_message_text, new_agent_text_message
 
 from messenger import Messenger
+from dataset import DatasetLoader
+
+from utils import send_message, get_text_parts
+from config import logger
 
 
 class EvalRequest(BaseModel):
@@ -14,14 +18,15 @@ class EvalRequest(BaseModel):
 
 
 class Agent:
-    # Fill in: list of required participant roles, e.g. ["pro_debater", "con_debater"]
-    required_roles: list[str] = ["green_agent"]
-    # Fill in: list of required config keys, e.g. ["topic", "num_rounds"]
+    # Each request handles a single purple agent to be evaluated
+    required_roles: list[str] = ["agent"]
+    # The request should list the tasks the agent would like to be evaluated at
     required_config_keys: list[str] = []
 
-    def __init__(self):
+    def __init__(self, path : str):
         self.messenger = Messenger()
         # Initialize other state here
+        self.dataset = DatasetLoader(path)
 
     def validate_request(self, request: EvalRequest) -> tuple[bool, str]:
         missing_roles = set(self.required_roles) - set(request.participants.keys())
@@ -31,8 +36,6 @@ class Agent:
         missing_config_keys = set(self.required_config_keys) - set(request.config.keys())
         if missing_config_keys:
             return False, f"Missing config keys: {missing_config_keys}"
-
-        # Add additional request validation here
 
         return True, "ok"
 
@@ -57,19 +60,62 @@ class Agent:
             await updater.reject(new_agent_text_message(f"Invalid request: {e}"))
             return
 
-        # Replace example code below with your agent logic
-        # Use request.participants to get participant agent URLs by role
-        # Use request.config for assessment parameters
+        # ok
+        await self.evaluate(request, updater)
+
+
+    async def evaluate(self, request: EvalRequest, updater: TaskUpdater) -> None:
+        """Execute the evaluation logic."""
+        # Get the purple agent URL
+        agent_url = str(request.participants["agent"])
+        logger.info(f"Starting evaluation of {agent_url}")
+
+        # Get configuration with defaults
+        type = request.config.get("type")
+
+        # Get tasks per question type (or all)
+        # TODO
+        tasks = ...
 
         await updater.update_status(
-            TaskState.working, new_agent_text_message("Thinking...")
+            TaskState.working,
+            new_agent_text_message(f"Starting evaluation of {len(tasks)} financial research tasks")
         )
-        await updater.add_artifact(
-            parts=[
-                Part(root=TextPart(text="The agent performed well.")),
-                Part(root=DataPart(data={
-                    # structured assessment results
-                }))
-            ],
-            name="Result",
+        for task in tasks:
+            results = await self.ask_agent_to_solve(
+                agent_url=agent_url,
+                task_description=task
+            )
+
+    async def ask_agent_to_solve(self, agent_url:str, task_description:str):
+        """
+        Asks tto be solved
+        """
+        # Prepare the initial message to the white agent
+        context_id = None
+
+        logger.info(
+            f"Sending task {task_description}"
         )
+        white_agent_response = await send_message(
+            agent_url, task_description, context_id=context_id
+        )
+        res_root = white_agent_response.root
+        assert isinstance(res_root, SendMessageSuccessResponse)
+        res_result = res_root.result
+        assert isinstance(
+            res_result, Message
+        )  # though, a robust design should also support Task
+        if context_id is None:
+            context_id = res_result.context_id
+        else:
+            assert context_id == res_result.context_id, (
+                "Context ID should remain the same in a conversation"
+            )
+
+        text_parts = get_text_parts(res_result.parts)
+        assert len(text_parts) == 1, "Expecting exactly one text part from the white agent"
+        white_text = text_parts[0]
+        logger.debug(f"@@@ White agent response:\n{white_text}")
+
+        return white_text
