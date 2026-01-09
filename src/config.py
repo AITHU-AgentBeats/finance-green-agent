@@ -16,6 +16,9 @@ class Settings:
     MODEL_PROVIDER: str = os.getenv("MODEL_PROVIDER", "nebius")
     MODEL_NAME: str = os.getenv("MODEL_NAME", "moonshotai/Kimi-K2-Instruct")
 
+    EDGAR_API_KEY = os.getenv("EDGAR_API_KEY")
+    SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY")
+
     TASK_CONFIG = {
         "env": "retail",
         "user_strategy": "llm",

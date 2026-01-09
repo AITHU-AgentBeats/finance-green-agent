@@ -99,7 +99,7 @@ class DatasetLoader:
                 )
                 self._queries.append(task)
 
-    def get_tasks(
+    def get_queries(
         self,
         question_type: Optional[list[str]] = None,
     ) -> list[Query]:

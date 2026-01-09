@@ -7,7 +7,7 @@ from a2a.utils import get_message_text, new_agent_text_message
 from messenger import Messenger
 from dataset import DatasetLoader
 
-from utils import send_message, get_text_parts
+from utils import send_message
 from config import logger
 
 
@@ -89,7 +89,7 @@ class Agent:
         for q in queries:
             results = await self.send_query(
                 agent_url=agent_url,
-                request=q
+                request=q.question
             )
 
             logger.info(results)
@@ -108,24 +108,20 @@ class Agent:
         agent_response = await send_message(
             agent_url, request, context_id=context_id
         )
+        # Is a success response
         res_root = agent_response.root
         assert isinstance(res_root, SendMessageSuccessResponse)
-        res_result = res_root.result
-        assert isinstance(
-            res_result, Message
-        )  # though, a robust design should also support Task
-        if context_id is None:
-            context_id = res_result.context_id
-        else:
-            assert context_id == res_result.context_id, (
-                "Context ID should remain the same in a conversation"
-            )
 
         # Extract content
-        text_parts = get_text_parts(res_result.parts)
-        assert len(text_parts) == 1, "Expecting exactly one text part from the agent"
+        res_result = res_root.result
+        artifact = res_result.artifacts[0]
 
-        response_text = text_parts[0]
-        logger.debug(f"Agent response:\n{response_text}")
+        # First artifact, second part
+        _, response = artifact.parts
+        response_dict = response.root.data
+        logger.debug(f"Agent response:\n{response_dict}")
 
-        return response_text
+        if "response" in response_dict:
+            return response_dict["response"]
+
+        return "something went wrong"

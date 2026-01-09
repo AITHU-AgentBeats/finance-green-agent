@@ -6,6 +6,7 @@ from a2a.types import (
     AgentCard,
     Part,
     TextPart,
+    DataPart,
     MessageSendParams,
     Message,
     Role,
@@ -59,3 +60,14 @@ def get_text_parts(parts: list[Part]) -> list[str]:
         A list of strings containing the text content from any `TextPart` objects found.
     """
     return [part.root.text for part in parts if isinstance(part.root, TextPart)]
+
+def get_data_parts(parts: list[Part]) -> list[str]:
+    """Extracts text content from all DataPart objects in a list of Parts.
+
+    Args:
+        parts: A list of `Part` objects.
+
+    Returns:
+        A list of strings containing the text content from any `DataPart` objects found.
+    """
+    return [part.data for part in parts if isinstance(part, DataPart)]

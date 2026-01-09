@@ -28,7 +28,7 @@ def main():
     # See: https://a2a-protocol.org/latest/tutorials/python/3-agent-skills-and-card/
 
     skill = AgentSkill(
-        id="host_assess_finance_benchmark",
+        id="assess",
         name="Finance benchmark assessment agent",
         description="Assess correct responses and serves tools as skills.",
         tags=["green agent", "assessment hosting", "finance benchmark"],
@@ -61,7 +61,7 @@ def main():
         http_handler=request_handler,
     )
 
-    # Init the MCP server
+    # Init the MCP server (independent thread)
     logger.info("Initializing MCP server...")
     mcp_thread = threading.Thread(target=run_server, daemon=True, name="MCP", args=[args.host, args.mcp_port])
     mcp_thread.start()

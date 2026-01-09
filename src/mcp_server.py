@@ -1,4 +1,7 @@
+import aiohttp
 from fastmcp import FastMCP
+
+from config import settings
 
 import logging
 logger = logging.getLogger("MCP server")
@@ -12,19 +15,63 @@ mcp = FastMCP(
 
 
 @mcp.tool()
-async def edgar_search() -> dict:
+async def edgar_search(args: dict) -> dict:
     """
     Search SEC EDGAR database.
     """
-    raise NotImplementedError
+    api_url = "https://api.sec-api.io/full-text-search"
 
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": settings.EDGAR_API_KEY,
+    }
+
+    payload = {
+        "query": args.get("query", ""),
+        "formTypes": args.get("form_types", []),
+        "ciks": args.get("ciks", []),
+        "startDate": args.get("start_date", ""),
+        "endDate": args.get("end_date", ""),
+        "page": args.get("page", "1"),
+    }
+
+    async with aiohttp.ClientSession() as session:
+        async with session.post(api_url, json=payload, headers=headers) as response:
+            response.raise_for_status()
+            result = await response.json()
+
+    filings = result.get("filings", [])
+    return filings
 
 @mcp.tool()
-async def google_web_search() -> dict:
+async def google_web_search(q:str, pages:int = 10) -> dict:
     """
     Search the web using SerpAPI
     """
-    raise NotImplementedError
+    # Fill search params
+    params = {
+        "api_key": settings.SERPAPI_API_KEY,
+        "engine": "google",
+        "q": q,
+        "num": pages,
+    }
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get("https://serpapi.com/search.json", params=params) as response:
+            response.raise_for_status()
+            result = await response.json()
+
+    organic_results = result.get("organic_results", [])
+    simplified = [
+        {
+            "title": r.get("title", ""),
+            "link": r.get("link", ""),
+            "snippet": r.get("snippet", ""),
+        }
+        for r in organic_results[:pages]
+    ]
+
+    return simplified
 
 # Launch MCP server
 def run_server(host: str = "127.0.0.1", port: int = 8001):
