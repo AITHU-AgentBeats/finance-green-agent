@@ -16,8 +16,8 @@ class RubricItem:
 
 
 @dataclass
-class Task:
-    """A single financial research task."""
+class Query:
+    """A single financial research query."""
     id: str
     question: str
     expert_answer: str
@@ -55,11 +55,11 @@ class DatasetLoader:
 
     def __init__(self, data_path: str = "data/public.csv"):
         self.data_path = Path(data_path)
-        self._tasks: list[Task] = []
+        self._queries: list[Query] = []
         self._load_data()
 
     def _load_data(self) -> None:
-        """Load tasks from CSV file."""
+        """Load queries from CSV file."""
         if not self.data_path.exists():
             raise FileNotFoundError(f"Dataset not found: {self.data_path}")
 
@@ -89,24 +89,24 @@ class DatasetLoader:
                 except (ValueError, TypeError):
                     expert_time = 0.0
 
-                task = Task(
-                    id=f"task_{idx:03d}",
+                task = Query(
+                    id=f"q_{idx:03d}",
                     question=row.get("Question", ""),
                     expert_answer=row.get("Answer", ""),
                     question_type=row.get("Question Type", "Unknown"),
                     expert_time_mins=expert_time,
                     rubrics=rubrics,
                 )
-                self._tasks.append(task)
+                self._queries.append(task)
 
     def get_tasks(
         self,
         question_type: Optional[list[str]] = None,
-    ) -> list[Task]:
+    ) -> list[Query]:
         """
-        Get tasks with type filtering.
+        Get queries with type filtering.
         """
-        tasks = self._tasks
+        tasks = self._queries
 
         # Filter by categories
         if question_type in self.QUESTION_TYPES:
@@ -114,15 +114,15 @@ class DatasetLoader:
 
         return tasks
 
-    def get_task_by_id(self, task_id: str) -> Optional[Task]:
+    def get_task_by_id(self, task_id: str) -> Optional[Query]:
         """Get a specific task by ID."""
-        for task in self._tasks:
+        for task in self._queries:
             if task.id == task_id:
                 return task
         return None
 
     def __len__(self) -> int:
-        return len(self._tasks)
+        return len(self._queries)
 
     def __iter__(self):
-        return iter(self._tasks)
+        return iter(self._queries)

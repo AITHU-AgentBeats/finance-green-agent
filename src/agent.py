@@ -18,6 +18,9 @@ class EvalRequest(BaseModel):
 
 
 class Agent:
+    """
+    Agent class defining the procedure to assess target agent accuracy
+    """
     # Each request handles a single purple agent to be evaluated
     required_roles: list[str] = ["agent"]
     # The request should list the tasks the agent would like to be evaluated at
@@ -29,6 +32,9 @@ class Agent:
         self.dataset = DatasetLoader(path)
 
     def validate_request(self, request: EvalRequest) -> tuple[bool, str]:
+        """
+        Validates that the request has the required role "agent" and "config" params
+        """
         missing_roles = set(self.required_roles) - set(request.participants.keys())
         if missing_roles:
             return False, f"Missing roles: {missing_roles}"
@@ -73,21 +79,23 @@ class Agent:
         # Get configuration with defaults
         type = request.config.get("type")
 
-        # Get tasks per question type (or all)
-        # TODO
-        tasks = ...
+        # Get query per question type (or all)
+        queries = self.dataset.get_queries(question_type=type)
 
         await updater.update_status(
             TaskState.working,
-            new_agent_text_message(f"Starting evaluation of {len(tasks)} financial research tasks")
+            new_agent_text_message(f"Starting evaluation of {len(queries)} financial research queries")
         )
-        for task in tasks:
-            results = await self.ask_agent_to_solve(
+        for q in queries:
+            results = await self.send_query(
                 agent_url=agent_url,
-                task_description=task
+                request=q
             )
 
-    async def ask_agent_to_solve(self, agent_url:str, task_description:str):
+            logger.info(results)
+            # TODO: Judge the response
+
+    async def send_query(self, agent_url:str, request:str):
         """
         Asks tto be solved
         """
@@ -95,12 +103,12 @@ class Agent:
         context_id = None
 
         logger.info(
-            f"Sending task {task_description}"
+            f"Sending query request {request}"
         )
-        white_agent_response = await send_message(
-            agent_url, task_description, context_id=context_id
+        agent_response = await send_message(
+            agent_url, request, context_id=context_id
         )
-        res_root = white_agent_response.root
+        res_root = agent_response.root
         assert isinstance(res_root, SendMessageSuccessResponse)
         res_result = res_root.result
         assert isinstance(
@@ -113,9 +121,11 @@ class Agent:
                 "Context ID should remain the same in a conversation"
             )
 
+        # Extract content
         text_parts = get_text_parts(res_result.parts)
-        assert len(text_parts) == 1, "Expecting exactly one text part from the white agent"
-        white_text = text_parts[0]
-        logger.debug(f"@@@ White agent response:\n{white_text}")
+        assert len(text_parts) == 1, "Expecting exactly one text part from the agent"
 
-        return white_text
+        response_text = text_parts[0]
+        logger.debug(f"Agent response:\n{response_text}")
+
+        return response_text

@@ -197,3 +197,43 @@ async def test_message(agent, streaming):
     assert not all_errors, f"Message validation failed:\n" + "\n".join(all_errors)
 
 # Add your custom tests here
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("streaming", [True, False])
+async def test_simulated_agent_evaluation(agent, streaming):
+    """Simulate a simple agent asking the green agent to evaluate a query category."""
+    category = "Market Analysis"
+    prompt = str({
+        "participants" : {"agent": "http://localhost:9019"},
+        "config": {"type" : category}
+    })
+
+    events = await send_text_message(prompt, agent, streaming=streaming)
+    assert events, "Agent should respond with at least one event"
+
+    """
+    validation_errors = []
+    found_indicator = False
+
+    for event in events:
+        match event:
+            case Message() as msg:
+                validation_errors.extend(validate_event(msg.model_dump()))
+                for part in msg.parts:
+                    if isinstance(part, TextPart):
+                        text = getattr(part, "text", "") or ""
+                        text_l = text.lower()
+                        if category.lower() in text_l or "yes" in text_l or "no" in text_l:
+                            found_indicator = True
+
+            case (task, update):
+                validation_errors.extend(validate_event(task.model_dump()))
+                if update:
+                    validation_errors.extend(validate_event(update.model_dump()))
+
+            case _:
+                pytest.fail(f"Unexpected event type: {type(event)}")
+
+    assert not validation_errors, "Response format validation failed:\n" + "\n".join(validation_errors)
+    assert found_indicator, f"Agent did not indicate classification for category '{category}' in its response"
+    """
