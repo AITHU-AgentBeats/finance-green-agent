@@ -43,8 +43,9 @@ async def edgar_search(query: str, start_date:str, end_date:str, context_id: str
     filings = result.get("filings", [])
     return filings
 
+
 @mcp.tool()
-async def google_web_search(q:str, pages:int = 10, context_id: str = None) -> list[dict]:
+async def google_web_search(q:str, context_id: str = "default") -> list[dict]:
     """
     Search the web using SerpAPI
     """
@@ -53,25 +54,18 @@ async def google_web_search(q:str, pages:int = 10, context_id: str = None) -> li
         "api_key": settings.SERPAPI_API_KEY,
         "engine": "google",
         "q": q,
-        "num": pages,
     }
 
+    result = []
     async with aiohttp.ClientSession() as session:
         async with session.get("https://serpapi.com/search.json", params=params) as response:
             response.raise_for_status()
             result = await response.json()
 
-    organic_results = result.get("organic_results", [])
-    output = [
-        {
-            "title": r.get("title", ""),
-            "link": r.get("link", ""),
-            "snippet": r.get("snippet", ""),
-        }
-        for r in organic_results[:pages]
-    ]
-
-    return output
+    if result:
+        return result.get("organic_results", [])
+    # Else
+    return []
 
 # Launch MCP server
 def run_server(host: str = "127.0.0.1", port: int = 8001):
