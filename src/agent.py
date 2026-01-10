@@ -1,10 +1,14 @@
 from typing import Any
 from pydantic import BaseModel, HttpUrl, ValidationError
 from a2a.server.tasks import TaskUpdater
-from a2a.types import Message, TaskState, Part, TextPart, DataPart
+from a2a.types import Message, TaskState, SendMessageSuccessResponse
 from a2a.utils import get_message_text, new_agent_text_message
 
 from messenger import Messenger
+from dataset import DatasetLoader
+
+from utils import send_message
+from config import logger
 
 
 class EvalRequest(BaseModel):
@@ -14,16 +18,23 @@ class EvalRequest(BaseModel):
 
 
 class Agent:
-    # Fill in: list of required participant roles, e.g. ["pro_debater", "con_debater"]
-    required_roles: list[str] = ["green_agent"]
-    # Fill in: list of required config keys, e.g. ["topic", "num_rounds"]
+    """
+    Agent class defining the procedure to assess target agent accuracy
+    """
+    # Each request handles a single purple agent to be evaluated
+    required_roles: list[str] = ["agent"]
+    # The request should list the tasks the agent would like to be evaluated at
     required_config_keys: list[str] = []
 
-    def __init__(self):
+    def __init__(self, path : str):
         self.messenger = Messenger()
         # Initialize other state here
+        self.dataset = DatasetLoader(path)
 
     def validate_request(self, request: EvalRequest) -> tuple[bool, str]:
+        """
+        Validates that the request has the required role "agent" and "config" params
+        """
         missing_roles = set(self.required_roles) - set(request.participants.keys())
         if missing_roles:
             return False, f"Missing roles: {missing_roles}"
@@ -31,8 +42,6 @@ class Agent:
         missing_config_keys = set(self.required_config_keys) - set(request.config.keys())
         if missing_config_keys:
             return False, f"Missing config keys: {missing_config_keys}"
-
-        # Add additional request validation here
 
         return True, "ok"
 
@@ -57,19 +66,62 @@ class Agent:
             await updater.reject(new_agent_text_message(f"Invalid request: {e}"))
             return
 
-        # Replace example code below with your agent logic
-        # Use request.participants to get participant agent URLs by role
-        # Use request.config for assessment parameters
+        # ok
+        await self.evaluate(request, updater)
+
+
+    async def evaluate(self, request: EvalRequest, updater: TaskUpdater) -> None:
+        """Execute the evaluation logic."""
+        # Get the purple agent URL
+        agent_url = str(request.participants["agent"])
+        logger.info(f"Starting evaluation of {agent_url}")
+
+        # Get configuration with defaults
+        type = request.config.get("type")
+
+        # Get query per question type (or all)
+        queries = self.dataset.get_queries(question_type=type)
 
         await updater.update_status(
-            TaskState.working, new_agent_text_message("Thinking...")
+            TaskState.working,
+            new_agent_text_message(f"Starting evaluation of {len(queries)} financial research queries")
         )
-        await updater.add_artifact(
-            parts=[
-                Part(root=TextPart(text="The agent performed well.")),
-                Part(root=DataPart(data={
-                    # structured assessment results
-                }))
-            ],
-            name="Result",
+        for q in queries:
+            results = await self.send_query(
+                agent_url=agent_url,
+                request=q.question
+            )
+
+            logger.info(results)
+            # TODO: Judge the response
+
+    async def send_query(self, agent_url:str, request:str):
+        """
+        Asks tto be solved
+        """
+        # Prepare the initial message to the white agent
+        context_id = None
+
+        logger.info(
+            f"Sending query request {request}"
         )
+        agent_response = await send_message(
+            agent_url, request, context_id=context_id
+        )
+        # Is a success response
+        res_root = agent_response.root
+        assert isinstance(res_root, SendMessageSuccessResponse)
+
+        # Extract content
+        res_result = res_root.result
+        artifact = res_result.artifacts[0]
+
+        # First artifact, second part
+        _, response = artifact.parts
+        response_dict = response.root.data
+        logger.debug(f"Agent response:\n{response_dict}")
+
+        if "response" in response_dict:
+            return response_dict["response"]
+
+        return "something went wrong"

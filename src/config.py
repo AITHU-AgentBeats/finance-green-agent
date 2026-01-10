@@ -13,20 +13,19 @@ load_dotenv(find_dotenv(), override=True)
 class Settings:
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
 
-    GREEN_AGENT_HOST: str = os.getenv("GREEN_AGENT_HOST", "localhost")
-    GREEN_AGENT_PORT: int = int(os.getenv("GREEN_AGENT_PORT", "9001"))
+    MODEL_PROVIDER: str = os.getenv("MODEL_PROVIDER", "nebius")
+    MODEL_NAME: str = os.getenv("MODEL_NAME", "moonshotai/Kimi-K2-Instruct")
 
-    MODEL_PROVIDER: int = int(os.getenv("MODEL_PROVIDER", "nebius"))
-    MODEL_NAME: int = int(os.getenv("MODEL_NAME", "moonshotai/Kimi-K2-Instruct"))
+    EDGAR_API_KEY = os.getenv("EDGAR_API_KEY")
+    SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY")
 
     TASK_CONFIG = {
         "env": "retail",
         "user_strategy": "llm",
         "user_model": f"{MODEL_NAME}",
         "user_provider": f"{MODEL_PROVIDER}",
-        "task_split": "test",
+        "task_split": "public",
         "task_path": "data/public.csv",
-        "task_ids": [1, 10],
     }
     TASK_TEXT = f"""
         Your task is to instantiate the finance benchmark to test the agent located at
@@ -37,14 +36,6 @@ class Settings:
         {json.dumps(TASK_CONFIG, indent=2)}
         </env_config>
     """
-
-    def green_url(self) -> str:
-        """Composes green agent url
-
-        Returns:
-            str: url
-        """
-        return f"http://{self.GREEN_AGENT_HOST}:{self.GREEN_AGENT_PORT}"
 
 
 # Create settings

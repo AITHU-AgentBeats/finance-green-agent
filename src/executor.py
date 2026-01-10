@@ -14,6 +14,7 @@ from a2a.utils import (
 )
 
 from agent import Agent
+from config import settings
 
 
 TERMINAL_STATES = {
@@ -44,7 +45,7 @@ class Executor(AgentExecutor):
         context_id = task.context_id
         agent = self.agents.get(context_id)
         if not agent:
-            agent = Agent()
+            agent = Agent(settings.TASK_CONFIG["task_path"])
             self.agents[context_id] = agent
 
         updater = TaskUpdater(event_queue, task.id, context_id)
