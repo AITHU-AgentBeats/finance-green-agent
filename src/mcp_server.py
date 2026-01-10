@@ -15,7 +15,7 @@ mcp = FastMCP(
 
 
 @mcp.tool()
-async def edgar_search(args: dict) -> dict:
+async def edgar_search(query: str, start_date:str, end_date:str, context_id: str = None) -> list:
     """
     Search SEC EDGAR database.
     """
@@ -27,12 +27,12 @@ async def edgar_search(args: dict) -> dict:
     }
 
     payload = {
-        "query": args.get("query", ""),
-        "formTypes": args.get("form_types", []),
-        "ciks": args.get("ciks", []),
-        "startDate": args.get("start_date", ""),
-        "endDate": args.get("end_date", ""),
-        "page": args.get("page", "1"),
+        "query": query,
+        "formTypes": [],
+        "ciks": [],
+        "startDate": start_date,
+        "endDate": end_date,
+        "page": 1,
     }
 
     async with aiohttp.ClientSession() as session:
@@ -44,7 +44,7 @@ async def edgar_search(args: dict) -> dict:
     return filings
 
 @mcp.tool()
-async def google_web_search(q:str, pages:int = 10) -> dict:
+async def google_web_search(q:str, pages:int = 10, context_id: str = None) -> list[dict]:
     """
     Search the web using SerpAPI
     """
@@ -62,7 +62,7 @@ async def google_web_search(q:str, pages:int = 10) -> dict:
             result = await response.json()
 
     organic_results = result.get("organic_results", [])
-    simplified = [
+    output = [
         {
             "title": r.get("title", ""),
             "link": r.get("link", ""),
@@ -71,7 +71,7 @@ async def google_web_search(q:str, pages:int = 10) -> dict:
         for r in organic_results[:pages]
     ]
 
-    return simplified
+    return output
 
 # Launch MCP server
 def run_server(host: str = "127.0.0.1", port: int = 8001):
