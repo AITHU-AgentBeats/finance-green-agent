@@ -78,14 +78,37 @@ class Agent:
 
         # Get configuration with defaults
         type = request.config.get("type")
+        query_index = request.config.get("query_index")
 
         # Get query per question type (or all)
         queries = self.dataset.get_queries(question_type=type)
 
-        await updater.update_status(
-            TaskState.working,
-            new_agent_text_message(f"Starting evaluation of {len(queries)} financial research queries")
-        )
+        # If query_index is specified, run only that query
+        if query_index is not None:
+            try:
+                query_index = int(query_index)
+                if 0 <= query_index < len(queries):
+                    queries = [queries[query_index]]
+                    await updater.update_status(
+                        TaskState.working,
+                        new_agent_text_message(f"Running single query at index {query_index}: {queries[0].question[:100]}...")
+                    )
+                else:
+                    await updater.reject(
+                        new_agent_text_message(f"Invalid query_index {query_index}. Valid range: 0-{len(queries)-1}")
+                    )
+                    return
+            except (ValueError, TypeError):
+                await updater.reject(
+                    new_agent_text_message(f"Invalid query_index: {query_index}. Must be an integer.")
+                )
+                return
+        else:
+            await updater.update_status(
+                TaskState.working,
+                new_agent_text_message(f"Starting evaluation of {len(queries)} financial research queries")
+            )
+
         for q in queries:
             results = await self.send_query(
                 agent_url=agent_url,
