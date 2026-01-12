@@ -101,16 +101,16 @@ class DatasetLoader:
 
     def get_queries(
         self,
-        question_type: Optional[list[str]] = None,
+        question_type: Optional[str] = None,
     ) -> list[Query]:
         """
         Get queries with type filtering.
         """
         tasks = self._queries
 
-        # Filter by categories
-        if question_type in self.QUESTION_TYPES:
-            tasks = [t for t in tasks if t.category in self.QUESTION_TYPES]
+        # Filter by question type
+        if question_type and question_type in self.QUESTION_TYPES:
+            tasks = [t for t in tasks if t.question_type == question_type]
 
         return tasks
 

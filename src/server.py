@@ -8,6 +8,7 @@ from a2a.server.tasks import InMemoryTaskStore
 from a2a.types import (
     AgentCapabilities,
     AgentCard,
+    AgentCardSignature,
     AgentSkill,
 )
 from mcp_server import run_server
@@ -41,6 +42,14 @@ def main():
         ]
     )
 
+    # Standard A2A method signatures
+    signatures = [
+        AgentCardSignature(signature="message/send", protected="false"),
+        AgentCardSignature(signature="message/stream", protected="false"),
+        AgentCardSignature(signature="tasks/get", protected="false"),
+        AgentCardSignature(signature="tasks/cancel", protected="false"),
+    ]
+
     agent_card = AgentCard(
         name="Finance Benchmark Green Agent",
         description="Agent for agent assessment over the finance benchamrk dataset",
@@ -49,7 +58,8 @@ def main():
         default_input_modes=['text'],
         default_output_modes=['text'],
         capabilities=AgentCapabilities(streaming=True),
-        skills=[skill]
+        skills=[skill],
+        signatures=signatures
     )
 
     request_handler = DefaultRequestHandler(
