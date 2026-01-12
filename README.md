@@ -55,3 +55,6 @@ uv sync --extra test
 # Run tests against your running agent URL
 uv run pytest --agent-url http://localhost:9009
 ```
+
+# Run MCP server test
+uv run pytest tests/test_mcp.py::test_google_web_search_via_http --mcp-url http://localhost:9020 -v
