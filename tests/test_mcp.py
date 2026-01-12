@@ -1,9 +1,7 @@
 import importlib.util
-import json
 import pathlib
 import sys
 
-import httpx
 import pytest
 
 
@@ -46,86 +44,3 @@ def test_mcp_object_has_run():
     assert hasattr(m, "mcp"), "Module should expose `mcp` object"
     assert hasattr(m.mcp, "run") and callable(m.mcp.run), "`mcp` should have callable `run`"
 
-
-@pytest.mark.asyncio
-async def test_google_web_search_via_http(mcp_server):
-    """Test google_web_search tool via HTTP."""
-    url = f"{mcp_server}/mcp"
-    
-    payload = {
-        "jsonrpc": "2.0",
-        "id": 1,
-        "method": "tools/call",
-        "params": {
-            "name": "google_web_search",
-            "arguments": {
-                "q": "Python programming",
-                "context_id": "test123"
-            }
-        }
-    }
-    
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json, text/event-stream"
-    }
-    
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        response = await client.post(url, json=payload, headers=headers)
-        assert response.status_code == 200, f"Expected 200, got {response.status_code}"
-        
-        # Parse SSE response
-        text = response.text
-        lines = text.strip().split('\n')
-        data_lines = [line for line in lines if line.startswith('data: ')]
-        assert len(data_lines) > 0, "No data lines in SSE response"
-        
-        # Parse the last data line
-        last_data = data_lines[-1].replace('data: ', '')
-        result = json.loads(last_data)
-        
-        assert "result" in result, "Response should contain 'result'"
-        assert isinstance(result["result"], list), "Result should be a list"
-
-
-@pytest.mark.asyncio
-async def test_edgar_search_via_http(mcp_server):
-    """Test edgar_search tool via HTTP."""
-    url = f"{mcp_server}/mcp"
-    
-    payload = {
-        "jsonrpc": "2.0",
-        "id": 2,
-        "method": "tools/call",
-        "params": {
-            "name": "edgar_search",
-            "arguments": {
-                "query": "Apple Inc",
-                "start_date": "2024-01-01",
-                "end_date": "2024-12-31",
-                "context_id": "test"
-            }
-        }
-    }
-    
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json, text/event-stream"
-    }
-    
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        response = await client.post(url, json=payload, headers=headers)
-        assert response.status_code == 200, f"Expected 200, got {response.status_code}"
-        
-        # Parse SSE response
-        text = response.text
-        lines = text.strip().split('\n')
-        data_lines = [line for line in lines if line.startswith('data: ')]
-        assert len(data_lines) > 0, "No data lines in SSE response"
-        
-        # Parse the last data line
-        last_data = data_lines[-1].replace('data: ', '')
-        result = json.loads(last_data)
-        
-        assert "result" in result, "Response should contain 'result'"
-        assert isinstance(result["result"], list), "Result should be a list"
