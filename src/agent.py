@@ -78,14 +78,37 @@ class Agent:
 
         # Get configuration with defaults
         type = request.config.get("type")
+        query_index = request.config.get("query_index")
 
         # Get query per question type (or all)
         queries = self.dataset.get_queries(question_type=type)
 
-        await updater.update_status(
-            TaskState.working,
-            new_agent_text_message(f"Starting evaluation of {len(queries)} financial research queries")
-        )
+        # If query_index is specified, run only that query
+        if query_index is not None:
+            try:
+                query_index = int(query_index)
+                if 0 <= query_index < len(queries):
+                    queries = [queries[query_index]]
+                    await updater.update_status(
+                        TaskState.working,
+                        new_agent_text_message(f"Running single query at index {query_index}: {queries[0].question[:100]}...")
+                    )
+                else:
+                    await updater.reject(
+                        new_agent_text_message(f"Invalid query_index {query_index}. Valid range: 0-{len(queries)-1}")
+                    )
+                    return
+            except (ValueError, TypeError):
+                await updater.reject(
+                    new_agent_text_message(f"Invalid query_index: {query_index}. Must be an integer.")
+                )
+                return
+        else:
+            await updater.update_status(
+                TaskState.working,
+                new_agent_text_message(f"Starting evaluation of {len(queries)} financial research queries")
+            )
+
         for q in queries:
             results = await self.send_query(
                 agent_url=agent_url,
@@ -97,17 +120,19 @@ class Agent:
 
     async def send_query(self, agent_url:str, request:str):
         """
-        Asks tto be solved
+        Sends a query to the purple agent and returns the response
         """
-        # Prepare the initial message to the white agent
+        # Prepare the initial message to the purple agent
         context_id = None
 
-        logger.info(
-            f"Sending query request {request}"
-        )
+        logger.info(f"[PURPLE AGENT REQUEST] URL: {agent_url}")
+        logger.info(f"[PURPLE AGENT REQUEST] Query: {request}")
+        logger.info(f"[PURPLE AGENT REQUEST] Context ID: {context_id}")
+        
         agent_response = await send_message(
             agent_url, request, context_id=context_id
         )
+        
         # Is a success response
         res_root = agent_response.root
         assert isinstance(res_root, SendMessageSuccessResponse)
@@ -119,9 +144,14 @@ class Agent:
         # First artifact, second part
         _, response = artifact.parts
         response_dict = response.root.data
-        logger.debug(f"Agent response:\n{response_dict}")
-
+        
+        logger.info(f"[PURPLE AGENT RESPONSE] URL: {agent_url}")
+        logger.info(f"[PURPLE AGENT RESPONSE] Response data: {response_dict}")
+        
         if "response" in response_dict:
-            return response_dict["response"]
+            purple_response = response_dict["response"]
+            logger.info(f"[PURPLE AGENT RESPONSE] Extracted response text: {purple_response[:200]}..." if len(purple_response) > 200 else f"[PURPLE AGENT RESPONSE] Extracted response text: {purple_response}")
+            return purple_response
 
+        logger.warning(f"[PURPLE AGENT RESPONSE] No 'response' key found in response_dict: {response_dict}")
         return "something went wrong"

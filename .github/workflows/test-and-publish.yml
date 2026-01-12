@@ -44,6 +44,7 @@ jobs:
           load: true
           platforms: linux/amd64
 
+      # Tests
       - name: Start agent container
         env:
             SECRETS_JSON: ${{ toJson(secrets) }}
@@ -59,7 +60,7 @@ jobs:
         run: uv sync --extra test
 
       - name: Run tests
-        run: uv run pytest -v --agent-url http://localhost:9009
+        run: uv run pytest -v --agent-url http://localhost:9009 tests/test_agent.py::test_agent_card
 
       - name: Stop container and show logs
         if: always()
@@ -68,6 +69,7 @@ jobs:
           docker logs agent-container || true
           docker stop agent-container || true
 
+      # Register
       - name: Log in to GitHub Container Registry
         if: success() && github.event_name != 'pull_request'
         uses: docker/login-action@v3

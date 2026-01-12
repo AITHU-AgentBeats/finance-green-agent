@@ -1,6 +1,7 @@
 import os
 import json
 from dataclasses import dataclass
+from pathlib import Path
 
 from dotenv import load_dotenv, find_dotenv
 from loguru import logger as _logger
@@ -43,10 +44,29 @@ settings = Settings()
 
 def configure_logger():
     """
-    Configure logger to be used
+    Configure logger to be used - writes to both file and console
     """
-    # idempotent config: remove existing handlers and add one handler
+    # Create logs directory if it doesn't exist
+    log_dir = Path("logs")
+    log_dir.mkdir(exist_ok=True)
+    
+    log_file = log_dir / "server.log"
+    
+    # idempotent config: remove existing handlers and add handlers
     _logger.remove()
+    
+    # Add file handler
+    _logger.add(
+        log_file,
+        format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level} | {name}:{function}:{line} - {message}",
+        level=settings.LOG_LEVEL,
+        rotation="10 MB",  # Rotate when file reaches 10MB
+        retention="7 days",  # Keep logs for 7 days
+        compression="zip",  # Compress old log files
+        enqueue=True,  # Thread-safe logging
+    )
+    
+    # Add console handler (optional - comment out if you don't want console output)
     _logger.add(
         lambda msg: print(msg, end=""),
         format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level} | {name}:{function}:{line} - {message}",
