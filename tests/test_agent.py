@@ -96,7 +96,7 @@ def _validate_message(data: dict[str, Any]) -> list[str]:
     errors = []
     if "parts" not in data or not isinstance(data.get("parts"), list) or not data.get("parts"):
         errors.append("Message object must have a non-empty 'parts' array.")
-    if "role" not in data or data.get("role") != "agent":
+    if "role" not in data or data.get("role") != "purple_agent":
         errors.append("Message from agent must have 'role' set to 'agent'.")
     return errors
 
@@ -196,7 +196,7 @@ async def test_message(agent, streaming):
 async def test_simulated_agent_evaluation(agent, streaming):
     """Simulate a simple agent asking the green agent to evaluate a query category."""
     category = "Market Analysis"
-    prompt = str({"participants": {"agent": "http://localhost:9019"}, "config": {"type": category}})
+    prompt = str({"participants": {"purple_agent": "http://localhost:9019"}, "config": {"type": category}})
 
     events = await send_text_message(prompt, agent, streaming=streaming)
     assert events, "Agent should respond with at least one event"

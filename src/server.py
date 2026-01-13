@@ -37,7 +37,7 @@ def main():
         tags=["green agent", "assessment hosting", "finance benchmark"],
         examples=[
             """{
-                    "participants" : {"agent": "http://localhost:9019"}, 
+                    "participants" : {"purple_agent": "http://localhost:9019"}, 
                     "config" : {"type" : "all"}
                 }
             """

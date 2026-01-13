@@ -25,7 +25,7 @@ class Agent:
     """
 
     # Each request handles a single purple agent to be evaluated
-    required_roles: list[str] = ["agent"]
+    required_roles: list[str] = ["purple_agent"]
     # The request should list the tasks the agent would like to be evaluated at
     required_config_keys: list[str] = []
 
@@ -36,7 +36,7 @@ class Agent:
 
     def validate_request(self, request: EvalRequest) -> tuple[bool, str]:
         """
-        Validates that the request has the required role "agent" and "config" params
+        Validates that the request has the required role "purple_agent" and "config" params
         """
         missing_roles = set(self.required_roles) - set(request.participants.keys())
         if missing_roles:
@@ -75,7 +75,7 @@ class Agent:
     async def evaluate(self, request: EvalRequest, updater: TaskUpdater) -> None:
         """Execute the evaluation logic."""
         # Get the purple agent URL
-        agent_url = str(request.participants["agent"])
+        agent_url = str(request.participants["purple_agent"])
         logger.info(f"Starting evaluation of {agent_url}")
 
         # Get configuration with defaults
