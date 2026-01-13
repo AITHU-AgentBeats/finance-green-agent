@@ -14,8 +14,11 @@ load_dotenv(find_dotenv(), override=True)
 class Settings:
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
 
+    NEBIUS_API_KEY: str = os.getenv("NEBIUS_API_KEY")
     MODEL_PROVIDER: str = os.getenv("MODEL_PROVIDER", "nebius")
     MODEL_NAME: str = os.getenv("MODEL_NAME", "moonshotai/Kimi-K2-Instruct")
+
+    JUDGE_MODEL: str = os.getenv("JUDGE_MODEL", "moonshotai/Kimi-K2-Instruct")
 
     EDGAR_API_KEY = os.getenv("EDGAR_API_KEY")
     SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY")
@@ -42,6 +45,7 @@ class Settings:
 # Create settings
 settings = Settings()
 
+
 def configure_logger():
     """
     Configure logger to be used - writes to both file and console
@@ -49,12 +53,12 @@ def configure_logger():
     # Create logs directory if it doesn't exist
     log_dir = Path("logs")
     log_dir.mkdir(exist_ok=True)
-    
+
     log_file = log_dir / "server.log"
-    
+
     # idempotent config: remove existing handlers and add handlers
     _logger.remove()
-    
+
     # Add file handler
     _logger.add(
         log_file,
@@ -65,7 +69,7 @@ def configure_logger():
         compression="zip",  # Compress old log files
         enqueue=True,  # Thread-safe logging
     )
-    
+
     # Add console handler (optional - comment out if you don't want console output)
     _logger.add(
         lambda msg: print(msg, end=""),

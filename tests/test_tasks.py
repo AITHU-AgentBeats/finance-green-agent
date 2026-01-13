@@ -39,7 +39,9 @@ async def test_concurrent_tasks(agent):
     texts = [f"ConTask {i}" for i in range(1, 6)]
     ctxs = [uuid4().hex for _ in texts]
 
-    coros = [send_text_message(t, agent, context_id=ctx, streaming=False) for t, ctx in zip(texts, ctxs)]
+    coros = [
+        send_text_message(t, agent, context_id=ctx, streaming=False) for t, ctx in zip(texts, ctxs)
+    ]
     results = await asyncio.gather(*coros)
 
     all_errors = []

@@ -29,7 +29,9 @@ async def test_tools_raise_not_implemented():
         tool = getattr(m, name)
         if callable(tool):
             # Tools are now implemented, so we skip this test if they are callable
-            pytest.skip(f"Tool {name} is callable and implemented, skipping NotImplementedError test")
+            pytest.skip(
+                f"Tool {name} is callable and implemented, skipping NotImplementedError test"
+            )
         elif hasattr(tool, "func"):
             # call the underlying coroutine function
             with pytest.raises(NotImplementedError):
@@ -43,4 +45,3 @@ def test_mcp_object_has_run():
     m = _load_mcp_module()
     assert hasattr(m, "mcp"), "Module should expose `mcp` object"
     assert hasattr(m.mcp, "run") and callable(m.mcp.run), "`mcp` should have callable `run`"
-

@@ -20,9 +20,7 @@ from a2a.types import (
 DEFAULT_TIMEOUT = 300
 
 
-def create_message(
-    *, role: Role = Role.user, text: str, context_id: str | None = None
-) -> Message:
+def create_message(*, role: Role = Role.user, text: str, context_id: str | None = None) -> Message:
     return Message(
         kind="message",
         role=role,

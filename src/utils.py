@@ -14,6 +14,7 @@ from a2a.types import (
     SendMessageResponse,
 )
 
+
 async def get_agent_card(url: str) -> AgentCard | None:
     """
     Get the agent card from provided url
@@ -25,9 +26,8 @@ async def get_agent_card(url: str) -> AgentCard | None:
 
     return card
 
-async def send_message(
-    url, message, task_id=None, context_id: str = None
-) -> SendMessageResponse:
+
+async def send_message(url, message, task_id=None, context_id: str = None) -> SendMessageResponse:
     """
     Sends the message
     """
@@ -50,6 +50,7 @@ async def send_message(
     response = await client.send_message(request=req)
     return response
 
+
 def get_text_parts(parts: list[Part]) -> list[str]:
     """Extracts text content from all TextPart objects in a list of Parts.
 
@@ -60,6 +61,7 @@ def get_text_parts(parts: list[Part]) -> list[str]:
         A list of strings containing the text content from any `TextPart` objects found.
     """
     return [part.root.text for part in parts if isinstance(part.root, TextPart)]
+
 
 def get_data_parts(parts: list[Part]) -> list[str]:
     """Extracts text content from all DataPart objects in a list of Parts.
