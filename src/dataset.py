@@ -1,6 +1,7 @@
 """
 Load the data from public.csv considering the query type and the rubric to be used for the assessment.
 """
+
 import csv
 import json
 from dataclasses import dataclass
@@ -11,6 +12,7 @@ from typing import Optional
 @dataclass
 class RubricItem:
     """Rubric item schema"""
+
     operator: str  # 'correctness' or 'contradiction'
     criteria: str
 
@@ -18,6 +20,7 @@ class RubricItem:
 @dataclass
 class Query:
     """A single financial research query."""
+
     id: str
     question: str
     expert_answer: str
@@ -37,6 +40,7 @@ class Query:
             if r.operator == "contradiction":
                 return r
         return None
+
 
 class DatasetLoader:
     """Dataset loader for the public size of the benchmark"""
@@ -76,10 +80,7 @@ class DatasetLoader:
                     rubrics_data = []
 
                 rubrics = [
-                    RubricItem(
-                        operator=r.get("operator", ""),
-                        criteria=r.get("criteria", "")
-                    )
+                    RubricItem(operator=r.get("operator", ""), criteria=r.get("criteria", ""))
                     for r in rubrics_data
                 ]
 

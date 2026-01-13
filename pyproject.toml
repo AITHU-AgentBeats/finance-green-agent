@@ -16,6 +16,7 @@ dependencies = [
     "aiohttp>=3.13.3",
     "fastmcp>=2.14.2",
     "loguru>=0.7.3",
+    "openai>=2.15.0",
     "pydantic>=2.12.5",
     "python-dotenv>=1.2.1",
     "uvicorn>=0.38.0",

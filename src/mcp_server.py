@@ -14,13 +14,15 @@ mcp = FastMCP(
 
 
 @mcp.tool()
-async def edgar_search(query: str, start_date:str, end_date:str, context_id: str = None) -> list:
+async def edgar_search(query: str, start_date: str, end_date: str, context_id: str = None) -> list:
     """
     Search SEC EDGAR database.
     """
     logger.info(f"[MCP TOOL CALL] edgar_search")
-    logger.info(f"[MCP TOOL CALL] Parameters: query='{query}', start_date='{start_date}', end_date='{end_date}', context_id='{context_id}'")
-    
+    logger.info(
+        f"[MCP TOOL CALL] Parameters: query='{query}', start_date='{start_date}', end_date='{end_date}', context_id='{context_id}'"
+    )
+
     api_url = "https://api.sec-api.io/full-text-search"
 
     headers = {
@@ -46,7 +48,9 @@ async def edgar_search(query: str, start_date:str, end_date:str, context_id: str
 
         filings = result.get("filings", [])
         logger.info(f"[MCP TOOL CALL] edgar_search - Success: Found {len(filings)} filings")
-        logger.debug(f"[MCP TOOL CALL] edgar_search - First filing: {filings[0] if filings else 'None'}")
+        logger.debug(
+            f"[MCP TOOL CALL] edgar_search - First filing: {filings[0] if filings else 'None'}"
+        )
         return filings
     except Exception as e:
         logger.error(f"[MCP TOOL CALL] edgar_search - Error: {e}")
@@ -54,13 +58,13 @@ async def edgar_search(query: str, start_date:str, end_date:str, context_id: str
 
 
 @mcp.tool()
-async def google_web_search(q:str, context_id: str = "default") -> list[dict]:
+async def google_web_search(q: str, context_id: str = "default") -> list[dict]:
     """
     Search the web using SerpAPI
     """
     logger.info(f"[MCP TOOL CALL] google_web_search")
     logger.info(f"[MCP TOOL CALL] Parameters: q='{q}', context_id='{context_id}'")
-    
+
     # Fill search params
     params = {
         "api_key": settings.SERPAPI_API_KEY,
@@ -78,8 +82,12 @@ async def google_web_search(q:str, context_id: str = "default") -> list[dict]:
 
         if result:
             organic_results = result.get("organic_results", [])
-            logger.info(f"[MCP TOOL CALL] google_web_search - Success: Found {len(organic_results)} results")
-            logger.debug(f"[MCP TOOL CALL] google_web_search - First result: {organic_results[0].get('title', 'N/A') if organic_results else 'None'}")
+            logger.info(
+                f"[MCP TOOL CALL] google_web_search - Success: Found {len(organic_results)} results"
+            )
+            logger.debug(
+                f"[MCP TOOL CALL] google_web_search - First result: {organic_results[0].get('title', 'N/A') if organic_results else 'None'}"
+            )
             return organic_results
         # Else
         logger.warning(f"[MCP TOOL CALL] google_web_search - No results returned")
@@ -87,6 +95,7 @@ async def google_web_search(q:str, context_id: str = "default") -> list[dict]:
     except Exception as e:
         logger.error(f"[MCP TOOL CALL] google_web_search - Error: {e}")
         raise
+
 
 # Launch MCP server
 def run_server(host: str = "127.0.0.1", port: int = 8001):
@@ -104,6 +113,7 @@ def run_server(host: str = "127.0.0.1", port: int = 8001):
 
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser(description="MCP Server")
     parser.add_argument("--host", type=str, default="127.0.0.1", help="Host to bind")
     parser.add_argument("--port", type=int, default=9020, help="Port to bind")

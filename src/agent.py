@@ -1,3 +1,4 @@
+import time
 from typing import Any
 from pydantic import BaseModel, HttpUrl, ValidationError
 from a2a.server.tasks import TaskUpdater
@@ -6,14 +7,15 @@ from a2a.utils import get_message_text, new_agent_text_message
 
 from messenger import Messenger
 from dataset import DatasetLoader
-
+from judge import Judge
 from utils import send_message
-from config import logger
+from config import logger, settings
 
 
 class EvalRequest(BaseModel):
     """Request format sent by the AgentBeats platform to green agents."""
-    participants: dict[str, HttpUrl] # role -> agent URL
+
+    participants: dict[str, HttpUrl]  # role -> agent URL
     config: dict[str, Any]
 
 
@@ -21,12 +23,13 @@ class Agent:
     """
     Agent class defining the procedure to assess target agent accuracy
     """
+
     # Each request handles a single purple agent to be evaluated
     required_roles: list[str] = ["agent"]
     # The request should list the tasks the agent would like to be evaluated at
     required_config_keys: list[str] = []
 
-    def __init__(self, path : str):
+    def __init__(self, path: str):
         self.messenger = Messenger()
         # Initialize other state here
         self.dataset = DatasetLoader(path)
@@ -69,7 +72,6 @@ class Agent:
         # ok
         await self.evaluate(request, updater)
 
-
     async def evaluate(self, request: EvalRequest, updater: TaskUpdater) -> None:
         """Execute the evaluation logic."""
         # Get the purple agent URL
@@ -91,34 +93,48 @@ class Agent:
                     queries = [queries[query_index]]
                     await updater.update_status(
                         TaskState.working,
-                        new_agent_text_message(f"Running single query at index {query_index}: {queries[0].question[:100]}...")
+                        new_agent_text_message(
+                            f"Running single query at index {query_index}: {queries[0].question[:100]}..."
+                        ),
                     )
                 else:
                     await updater.reject(
-                        new_agent_text_message(f"Invalid query_index {query_index}. Valid range: 0-{len(queries)-1}")
+                        new_agent_text_message(
+                            f"Invalid query_index {query_index}. Valid range: 0-{len(queries) - 1}"
+                        )
                     )
                     return
             except (ValueError, TypeError):
                 await updater.reject(
-                    new_agent_text_message(f"Invalid query_index: {query_index}. Must be an integer.")
+                    new_agent_text_message(
+                        f"Invalid query_index: {query_index}. Must be an integer."
+                    )
                 )
                 return
         else:
             await updater.update_status(
                 TaskState.working,
-                new_agent_text_message(f"Starting evaluation of {len(queries)} financial research queries")
+                new_agent_text_message(
+                    f"Starting evaluation of {len(queries)} financial research queries"
+                ),
             )
 
         for q in queries:
-            results = await self.send_query(
-                agent_url=agent_url,
-                request=q.question
-            )
+            # Start
+            timestamp_started = time.time()
+            results = await self.send_query(agent_url=agent_url, request=q.question)
+            time_taken = (time.time() - timestamp_started) / 60  # mins
 
-            logger.info(results)
-            # TODO: Judge the response
+            # Evaluate the response
+            judge = Judge(q, time_taken, model=settings.JUDGE_MODEL)
+            judge.judge(response=results)
 
-    async def send_query(self, agent_url:str, request:str):
+            evals = judge.return_eval()
+            logger.debug(evals)
+
+            # TODO: Inform the leaderboard
+
+    async def send_query(self, agent_url: str, request: str):
         """
         Sends a query to the purple agent and returns the response
         """
@@ -128,11 +144,9 @@ class Agent:
         logger.info(f"[PURPLE AGENT REQUEST] URL: {agent_url}")
         logger.info(f"[PURPLE AGENT REQUEST] Query: {request}")
         logger.info(f"[PURPLE AGENT REQUEST] Context ID: {context_id}")
-        
-        agent_response = await send_message(
-            agent_url, request, context_id=context_id
-        )
-        
+
+        agent_response = await send_message(agent_url, request, context_id=context_id)
+
         # Is a success response
         res_root = agent_response.root
         assert isinstance(res_root, SendMessageSuccessResponse)
@@ -144,14 +158,20 @@ class Agent:
         # First artifact, second part
         _, response = artifact.parts
         response_dict = response.root.data
-        
+
         logger.info(f"[PURPLE AGENT RESPONSE] URL: {agent_url}")
         logger.info(f"[PURPLE AGENT RESPONSE] Response data: {response_dict}")
-        
+
         if "response" in response_dict:
             purple_response = response_dict["response"]
-            logger.info(f"[PURPLE AGENT RESPONSE] Extracted response text: {purple_response[:200]}..." if len(purple_response) > 200 else f"[PURPLE AGENT RESPONSE] Extracted response text: {purple_response}")
+            logger.info(
+                f"[PURPLE AGENT RESPONSE] Extracted response text: {purple_response[:200]}..."
+                if len(purple_response) > 200
+                else f"[PURPLE AGENT RESPONSE] Extracted response text: {purple_response}"
+            )
             return purple_response
 
-        logger.warning(f"[PURPLE AGENT RESPONSE] No 'response' key found in response_dict: {response_dict}")
+        logger.warning(
+            f"[PURPLE AGENT RESPONSE] No 'response' key found in response_dict: {response_dict}"
+        )
         return "something went wrong"

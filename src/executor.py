@@ -17,17 +17,12 @@ from agent import Agent
 from config import settings, logger
 
 
-TERMINAL_STATES = {
-    TaskState.completed,
-    TaskState.canceled,
-    TaskState.failed,
-    TaskState.rejected
-}
+TERMINAL_STATES = {TaskState.completed, TaskState.canceled, TaskState.failed, TaskState.rejected}
 
 
 class Executor(AgentExecutor):
     def __init__(self):
-        self.agents: dict[str, Agent] = {} # context_id to agent instance
+        self.agents: dict[str, Agent] = {}  # context_id to agent instance
 
     async def execute(self, context: RequestContext, event_queue: EventQueue) -> None:
         msg = context.message
@@ -36,7 +31,11 @@ class Executor(AgentExecutor):
 
         task = context.current_task
         if task and task.status.state in TERMINAL_STATES:
-            raise ServerError(error=InvalidRequestError(message=f"Task {task.id} already processed (state: {task.status.state})"))
+            raise ServerError(
+                error=InvalidRequestError(
+                    message=f"Task {task.id} already processed (state: {task.status.state})"
+                )
+            )
 
         if not task:
             task = new_task(msg)
@@ -57,7 +56,9 @@ class Executor(AgentExecutor):
                 await updater.complete()
         except Exception as e:
             logger.error(f"Task failed with agent error: {e}")
-            await updater.failed(new_agent_text_message(f"Agent error: {e}", context_id=context_id, task_id=task.id))
+            await updater.failed(
+                new_agent_text_message(f"Agent error: {e}", context_id=context_id, task_id=task.id)
+            )
 
     async def cancel(self, context: RequestContext, event_queue: EventQueue) -> None:
         raise ServerError(error=UnsupportedOperationError())
