@@ -85,8 +85,8 @@ class Judge:
         return {
             "time_taken": self.performance.model_time / self.performance.expert_time,
             "overlap": self.performance.answer_overlap,
-            "correctness": st.mean(self.performance.correctness),
-            "contradictions": st.mean(self.performance.contradictions),
+            "correctness": st.mean(self.performance.correctness) if len(self.performance.correctness) > 0 else 0.0,
+            "contradictions": st.mean(self.performance.contradictions) if len(self.performance.contradictions) > 0 else 0.0,
         }
 
     def _get_rubric_messages(self, eval_type: str, received: str, criteria: str = None):

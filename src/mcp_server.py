@@ -1,6 +1,4 @@
 import aiohttp
-import json
-import time
 from fastmcp import FastMCP
 
 from config import settings, logger
@@ -18,8 +16,8 @@ async def edgar_search(query: str, start_date: str, end_date: str, context_id: s
     """
     Search SEC EDGAR database.
     """
-    logger.info(f"[MCP TOOL CALL] edgar_search")
-    logger.info(
+    logger.debug(f"[MCP TOOL CALL] edgar_search")
+    logger.debug(
         f"[MCP TOOL CALL] Parameters: query='{query}', start_date='{start_date}', end_date='{end_date}', context_id='{context_id}'"
     )
 
@@ -47,7 +45,7 @@ async def edgar_search(query: str, start_date: str, end_date: str, context_id: s
                 result = await response.json()
 
         filings = result.get("filings", [])
-        logger.info(f"[MCP TOOL CALL] edgar_search - Success: Found {len(filings)} filings")
+        logger.debug(f"[MCP TOOL CALL] edgar_search - Success: Found {len(filings)} filings")
         logger.debug(
             f"[MCP TOOL CALL] edgar_search - First filing: {filings[0] if filings else 'None'}"
         )
@@ -62,8 +60,8 @@ async def google_web_search(q: str, context_id: str = "default") -> list[dict]:
     """
     Search the web using SerpAPI
     """
-    logger.info(f"[MCP TOOL CALL] google_web_search")
-    logger.info(f"[MCP TOOL CALL] Parameters: q='{q}', context_id='{context_id}'")
+    logger.debug(f"[MCP TOOL CALL] google_web_search")
+    logger.debug(f"[MCP TOOL CALL] Parameters: q='{q}', context_id='{context_id}'")
 
     # Fill search params
     params = {
@@ -82,7 +80,7 @@ async def google_web_search(q: str, context_id: str = "default") -> list[dict]:
 
         if result:
             organic_results = result.get("organic_results", [])
-            logger.info(
+            logger.debug(
                 f"[MCP TOOL CALL] google_web_search - Success: Found {len(organic_results)} results"
             )
             logger.debug(
