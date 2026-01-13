@@ -2,7 +2,7 @@ import time
 from typing import Any
 from pydantic import BaseModel, HttpUrl, ValidationError
 from a2a.server.tasks import TaskUpdater
-from a2a.types import Message, TaskState, SendMessageSuccessResponse
+from a2a.types import Message, TaskState, SendMessageSuccessResponse, Part, DataPart
 from a2a.utils import get_message_text, new_agent_text_message
 
 from messenger import Messenger
@@ -119,6 +119,7 @@ class Agent:
                 ),
             )
 
+        benchmark_results = {}
         for q in queries:
             # Start
             timestamp_started = time.time()
@@ -126,13 +127,76 @@ class Agent:
             time_taken = (time.time() - timestamp_started) / 60  # mins
 
             # Evaluate the response
-            judge = Judge(q, time_taken, model=settings.JUDGE_MODEL)
+            judge = Judge(q, time_taken, model=settings.MODEL_NAME)
             judge.judge(response=results)
 
             evals = judge.return_eval()
-            logger.debug(evals)
 
-            # TODO: Inform the leaderboard
+            benchmark_results[q.id] = evals
+
+        logger.debug(f"Obtained results {len(benchmark_results)}")
+
+        if len(benchmark_results) > 1:
+            flattened_results = self.average_results(benchmark_results)
+            logger.debug(flattened_results)
+
+            # Add benchmark as result
+            await updater.add_artifact(
+                parts=[
+                    Part(root=DataPart(data=flattened_results)),
+                ],
+                name="Result",
+            )
+        else:
+            await updater.add_artifact(
+                parts=[
+                    Part(root=DataPart(data=benchmark_results)),
+                ],
+                name="Result",
+            )
+
+    def average_results(self, list_results: list[dict]) -> dict:
+        """
+        Gets the final answer if more than one query is involved
+        """
+        final_results = {"num. queries" : len(list_results)}
+
+        # Normalize input to a list of dicts
+        entries = list(list_results.values()) if isinstance(list_results, dict) else list(list_results)
+        if not entries:
+            return final_results
+
+        def is_number(x):
+            return isinstance(x, (int, float)) and not isinstance(x, bool)
+
+        def avg(values):
+            # All dicts -> recurse to average nested structure
+            if all(isinstance(v, dict) for v in values):
+                return self.average_results({i: v for i, v in enumerate(values)})
+            # All numeric -> return mean
+            if all(is_number(v) for v in values):
+                return sum(float(v) for v in values) / len(values)
+            # Fallback: return unique values (single value -> scalar)
+            uniq = []
+            seen = set()
+            for v in values:
+                key = str(v)
+                if key not in seen:
+                    seen.add(key)
+                    uniq.append(v)
+            return uniq[0] if len(uniq) == 1 else uniq
+
+        # Collect all keys and compute per-key averages
+        keys = set()
+        for e in entries:
+            if isinstance(e, dict):
+                keys.update(e.keys())
+
+        for k in keys:
+            vals = [e.get(k) for e in entries]
+            final_results[k] = avg(vals)
+
+        return final_results
 
     async def send_query(self, agent_url: str, request: str):
         """
@@ -141,9 +205,9 @@ class Agent:
         # Prepare the initial message to the purple agent
         context_id = None
 
-        logger.info(f"[PURPLE AGENT REQUEST] URL: {agent_url}")
-        logger.info(f"[PURPLE AGENT REQUEST] Query: {request}")
-        logger.info(f"[PURPLE AGENT REQUEST] Context ID: {context_id}")
+        logger.debug(f"[PURPLE AGENT REQUEST] URL: {agent_url}")
+        logger.debug(f"[PURPLE AGENT REQUEST] Query: {request}")
+        logger.debug(f"[PURPLE AGENT REQUEST] Context ID: {context_id}")
 
         agent_response = await send_message(agent_url, request, context_id=context_id)
 
@@ -159,12 +223,12 @@ class Agent:
         _, response = artifact.parts
         response_dict = response.root.data
 
-        logger.info(f"[PURPLE AGENT RESPONSE] URL: {agent_url}")
-        logger.info(f"[PURPLE AGENT RESPONSE] Response data: {response_dict}")
+        logger.debug(f"[PURPLE AGENT RESPONSE] URL: {agent_url}")
+        logger.debug(f"[PURPLE AGENT RESPONSE] Response data: {response_dict}")
 
         if "response" in response_dict:
             purple_response = response_dict["response"]
-            logger.info(
+            logger.debug(
                 f"[PURPLE AGENT RESPONSE] Extracted response text: {purple_response[:200]}..."
                 if len(purple_response) > 200
                 else f"[PURPLE AGENT RESPONSE] Extracted response text: {purple_response}"
