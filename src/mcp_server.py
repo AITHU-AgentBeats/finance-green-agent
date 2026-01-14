@@ -21,6 +21,12 @@ async def edgar_search(query: str, start_date: str, end_date: str, context_id: s
         f"[MCP TOOL CALL] Parameters: query='{query}', start_date='{start_date}', end_date='{end_date}', context_id='{context_id}'"
     )
 
+    # Check if API key is configured
+    if not settings.EDGAR_API_KEY:
+        error_msg = "[MCP TOOL CALL] edgar_search - Error: EDGAR_API_KEY not configured. Please set EDGAR_API_KEY in .env file"
+        logger.error(error_msg)
+        raise ValueError(error_msg)
+
     api_url = "https://api.sec-api.io/full-text-search"
 
     headers = {

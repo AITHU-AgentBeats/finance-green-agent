@@ -57,7 +57,7 @@ async def send_evaluation_request():
     
     eval_request = {
         'participants': {
-            'agent': purple_agent_url
+            'purple_agent': purple_agent_url
         },
         'config': config
     }
