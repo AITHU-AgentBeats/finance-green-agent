@@ -136,30 +136,22 @@ class Agent:
 
         logger.debug(f"Obtained results {len(benchmark_results)}")
 
-        if len(benchmark_results) > 1:
-            flattened_results = self.average_results(benchmark_results)
-            logger.debug(flattened_results)
+        flattened_results = self.average_results(benchmark_results)
+        logger.debug(flattened_results)
 
-            # Add benchmark as result
-            await updater.add_artifact(
-                parts=[
-                    Part(root=DataPart(data=flattened_results)),
-                ],
-                name="Result",
-            )
-        else:
-            await updater.add_artifact(
-                parts=[
-                    Part(root=DataPart(data=benchmark_results)),
-                ],
-                name="Result",
-            )
+        # Add benchmark as result
+        await updater.add_artifact(
+            parts=[
+                Part(root=DataPart(data=flattened_results)),
+            ],
+            name="Result",
+        )
 
     def average_results(self, list_results: list[dict]) -> dict:
         """
         Gets the final answer if more than one query is involved
         """
-        final_results = {"num. queries" : len(list_results)}
+        final_results = {"num_queries" : len(list_results)}
 
         # Normalize input to a list of dicts
         entries = list(list_results.values()) if isinstance(list_results, dict) else list(list_results)

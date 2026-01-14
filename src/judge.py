@@ -74,7 +74,7 @@ class Judge:
             temperature=self.temperature,
             messages=messages,
         )
-        self.performance.answer_overlap = response.choices[0].message.content
+        self.performance.answer_overlap = float(response.choices[0].message.content)
 
     def return_eval(self) -> dict:
         """
